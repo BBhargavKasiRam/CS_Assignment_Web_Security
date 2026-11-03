@@ -1,0 +1,23 @@
+{
+  "name": "sql-injection-auth-bypass-lab",
+  "version": "1.0.0",
+  "description": "SQL Injection Authentication Bypass Lab (Variant 1) - IIIT Allahabad Cyber Security (IT-30001)",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "test": "node --test tests/authentication.test.js"
+  },
+  "keywords": [
+    "cybersecurity",
+    "sqli",
+    "sql-injection",
+    "authentication-bypass",
+    "iiit-allahabad",
+    "parameterized-queries"
+  ],
+  "author": "IIIT Allahabad Cyber Security Student",
+  "license": "ISC",
+  "dependencies": {
+    "express": "^5.3.0"
+  }
+}

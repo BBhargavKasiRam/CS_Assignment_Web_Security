@@ -1,0 +1,384 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SQL Injection Authentication Bypass Lab | IIIT Allahabad</title>
+  <meta name="description" content="Demonstration and mitigation of SQL Injection Variant 1: Authentication Bypass for Cyber Security (IT-30001) at IIIT Allahabad.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500;600&family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="app-container">
+    <!-- Academic Header Banner -->
+    <header class="academic-header">
+      <div class="header-content">
+        <div class="institution-branding">
+          <span class="badge badge-accent">IIIT ALLAHABAD • IT-30001</span>
+          <span class="badge badge-outline">Autumn Semester 2026</span>
+          <span class="badge badge-instructor">Instructor: Dr. Soumyadev Maity</span>
+        </div>
+        <h1 class="main-title">SQL Injection Authentication Bypass Lab</h1>
+        <p class="subtitle">
+          Web Server Security: Exploitation &amp; Defense Demonstration — 
+          <span class="highlight-category">Assigned Category: SQL Injection</span> | 
+          <span class="highlight-variant">Variant 1: Authentication Bypass</span>
+        </p>
+      </div>
+
+      <div class="header-actions">
+        <button id="btn-reset-db" class="btn btn-secondary" title="Reset SQLite database to fresh demonstration seeds">
+          <svg class="icon" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg>
+          Reset Demo Database
+        </button>
+      </div>
+    </header>
+
+    <!-- Interactive Test Quick-Pills -->
+    <section class="quick-test-section">
+      <div class="section-badge-row">
+        <span class="section-label">⚡ ONE-CLICK TEST PAYLOADS &amp; CREDENTIALS</span>
+        <span class="pill-instruction">Click any scenario to populate the input forms:</span>
+      </div>
+      <div class="payload-button-grid">
+        <button class="pill-btn pill-exploit" data-user="admin' --" data-pass="arbitrary_wrong_password" id="pill-admin-bypass">
+          <span class="pill-tag exploit-tag">EXPLOIT</span>
+          <strong>admin' --</strong> (Admin Account Takeover)
+        </button>
+        <button class="pill-btn pill-exploit" data-user="' OR 1=1 --" data-pass="anything" id="pill-tautology-bypass">
+          <span class="pill-tag exploit-tag">EXPLOIT</span>
+          <strong>' OR 1=1 --</strong> (Tautology Bypass)
+        </button>
+        <button class="pill-btn pill-exploit" data-user="faculty' --" data-pass="wrongpass" id="pill-faculty-bypass">
+          <span class="pill-tag exploit-tag">EXPLOIT</span>
+          <strong>faculty' --</strong> (Target Instructor Account)
+        </button>
+        <button class="pill-btn pill-valid" data-user="admin" data-pass="Admin@SecLab2026!" id="pill-legit-admin">
+          <span class="pill-tag valid-tag">VALID</span>
+          <strong>admin</strong> / Admin@SecLab2026!
+        </button>
+        <button class="pill-btn pill-valid" data-user="alice" data-pass="Alice#Pass987" id="pill-legit-alice">
+          <span class="pill-tag valid-tag">VALID</span>
+          <strong>alice</strong> / Alice#Pass987
+        </button>
+        <button class="pill-btn pill-invalid" data-user="guest" data-pass="WrongPassword123" id="pill-invalid-user">
+          <span class="pill-tag invalid-tag">INVALID</span>
+          <strong>guest</strong> / WrongPassword123
+        </button>
+      </div>
+    </section>
+
+    <!-- Side-by-Side Comparison Workspace -->
+    <main class="lab-workspace">
+      <!-- COLUMN A: VULNERABLE IMPLEMENTATION -->
+      <section class="card lab-card card-vulnerable" id="vulnerable-card">
+        <div class="card-header">
+          <div class="title-with-badge">
+            <span class="status-indicator indicator-vuln"></span>
+            <h2>Vulnerable Login Implementation</h2>
+          </div>
+          <span class="badge badge-vuln">UNSAFE CONCATENATION</span>
+        </div>
+
+        <p class="card-desc">
+          Accepts credentials and constructs the SQL statement via direct string concatenation.
+          Untrusted input is parsed directly as SQL command syntax.
+        </p>
+
+        <form id="vulnerable-form" class="login-form">
+          <div class="form-group">
+            <label for="vuln-username">Username or Injection Payload</label>
+            <div class="input-wrapper">
+              <input type="text" id="vuln-username" name="username" placeholder="e.g. admin' --" required autocomplete="off">
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label for="vuln-password">Password</label>
+            <div class="input-wrapper">
+              <input type="password" id="vuln-password" name="password" placeholder="Enter password (or arbitrary text if attacking)" required autocomplete="off">
+            </div>
+          </div>
+
+          <div class="form-actions">
+            <button type="submit" id="vuln-submit-btn" class="btn btn-vuln">
+              <svg class="icon" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/><polyline points="10 17 15 12 10 7"/><line x1="15" y1="12" x2="3" y2="12"/></svg>
+              Test Vulnerable Login
+            </button>
+            <button type="button" class="btn btn-ghost" onclick="clearVulnForm()">Clear</button>
+          </div>
+        </form>
+
+        <!-- Live Server Response for Vulnerable -->
+        <div class="result-box" id="vuln-result-box" style="display: none;">
+          <div class="result-header" id="vuln-result-header">
+            <span class="result-status-badge" id="vuln-status-badge">RESULT</span>
+            <span class="status-code" id="vuln-status-code">HTTP 200</span>
+          </div>
+          <div class="result-message" id="vuln-result-message"></div>
+
+          <div class="account-card" id="vuln-account-card" style="display: none;">
+            <div class="account-card-header">
+              <span class="avatar" id="vuln-avatar">U</span>
+              <div>
+                <strong id="vuln-user-fullname">Full Name</strong>
+                <span class="user-role" id="vuln-user-role">Role</span>
+              </div>
+            </div>
+            <div class="account-details">
+              <div><span>Username:</span> <code id="vuln-user-username">-</code></div>
+              <div><span>Email:</span> <code id="vuln-user-email">-</code></div>
+              <div><span>User ID:</span> <code id="vuln-user-id">-</code></div>
+            </div>
+          </div>
+
+          <div class="sql-inspector">
+            <div class="inspector-title">Constructed SQL Query (Raw String):</div>
+            <pre class="code-block" id="vuln-sql-code"></pre>
+          </div>
+        </div>
+      </section>
+
+      <!-- COLUMN B: SECURE IMPLEMENTATION -->
+      <section class="card lab-card card-secure" id="secure-card">
+        <div class="card-header">
+          <div class="title-with-badge">
+            <span class="status-indicator indicator-secure"></span>
+            <h2>Secure Login Implementation</h2>
+          </div>
+          <span class="badge badge-secure">PARAMETERIZED QUERY</span>
+        </div>
+
+        <p class="card-desc">
+          Implements the primary mitigation using prepared statements with bound parameter placeholders (<code>?</code>).
+          Input values remain strictly literal data.
+        </p>
+
+        <form id="secure-form" class="login-form">
+          <div class="form-group">
+            <label for="sec-username">Username or Test Input</label>
+            <div class="input-wrapper">
+              <input type="text" id="sec-username" name="username" placeholder="e.g. admin' -- or admin" required autocomplete="off">
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label for="sec-password">Password</label>
+            <div class="input-wrapper">
+              <input type="password" id="sec-password" name="password" placeholder="Enter password" required autocomplete="off">
+            </div>
+          </div>
+
+          <div class="form-actions">
+            <button type="submit" id="sec-submit-btn" class="btn btn-secure">
+              <svg class="icon" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+              Test Secure Login
+            </button>
+            <button type="button" class="btn btn-ghost" onclick="clearSecForm()">Clear</button>
+          </div>
+        </form>
+
+        <!-- Live Server Response for Secure -->
+        <div class="result-box" id="sec-result-box" style="display: none;">
+          <div class="result-header" id="sec-result-header">
+            <span class="result-status-badge" id="sec-status-badge">RESULT</span>
+            <span class="status-code" id="sec-status-code">HTTP 401</span>
+          </div>
+          <div class="result-message" id="sec-result-message"></div>
+
+          <div class="account-card" id="sec-account-card" style="display: none;">
+            <div class="account-card-header">
+              <span class="avatar avatar-secure" id="sec-avatar">U</span>
+              <div>
+                <strong id="sec-user-fullname">Full Name</strong>
+                <span class="user-role" id="sec-user-role">Role</span>
+              </div>
+            </div>
+            <div class="account-details">
+              <div><span>Username:</span> <code id="sec-user-username">-</code></div>
+              <div><span>Email:</span> <code id="sec-user-email">-</code></div>
+              <div><span>User ID:</span> <code id="sec-user-id">-</code></div>
+            </div>
+          </div>
+
+          <div class="sql-inspector">
+            <div class="inspector-title">Parameterized Query Template &amp; Parameters:</div>
+            <pre class="code-block" id="sec-sql-code"></pre>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <!-- Deep-Dive Educational Analysis Panel -->
+    <section class="educational-analysis">
+      <div class="analysis-tabs">
+        <button class="tab-btn active" data-tab="tab-query-diff">Query &amp; AST Analysis</button>
+        <button class="tab-btn" data-tab="tab-mitigations">Defense Theory &amp; Mitigations</button>
+        <button class="tab-btn" data-tab="tab-accounts">Fictional Demo Accounts</button>
+      </div>
+
+      <!-- Tab 1: Query & AST Analysis -->
+      <div class="tab-content active" id="tab-query-diff">
+        <div class="analysis-grid">
+          <div class="analysis-box">
+            <h3 class="analysis-heading vuln-heading">Vulnerable Query Structure</h3>
+            <pre class="code-diff"><code><span class="comment">// Vulnerable route: string concatenation</span>
+<span class="keyword">const</span> sql = <span class="string">`SELECT * FROM users WHERE username = '${username}' AND password = '${password}'`</span>;
+
+<span class="comment">// When attacker inputs username: admin' --</span>
+<span class="keyword">SELECT</span> * <span class="keyword">FROM</span> users 
+<span class="keyword">WHERE</span> username = <span class="string">'admin'</span> <span class="highlight-exploit">--' AND password = 'arbitrary'</span>;
+<span class="comment">                         └─► SQL COMMENT: Entire password check is ignored!</span></code></pre>
+            <p class="expl-text">
+              <strong>Root Cause:</strong> User data breaches the boundary between code and data. The single quote (<code>'</code>) terminates the username literal, and the double dash (<code>--</code>) signals SQLite to treat all subsequent text on that line as a comment. The database evaluates only <code>WHERE username = 'admin'</code>, immediately bypassing password authentication.
+            </p>
+          </div>
+
+          <div class="analysis-box">
+            <h3 class="analysis-heading secure-heading">Secure Parameterized Query</h3>
+            <pre class="code-diff"><code><span class="comment">// Secure route: prepared statement with ? placeholders</span>
+<span class="keyword">const</span> stmt = db.<span class="func">prepare</span>(<span class="string">'SELECT * FROM users WHERE username = ? AND password = ?'</span>);
+<span class="keyword">const</span> user = stmt.<span class="func">get</span>(username, password);
+
+<span class="comment">// Injected input: admin' --</span>
+<span class="comment">// Evaluated literally as:</span>
+WHERE username = <span class="highlight-secure">"admin' --"</span> AND password = <span class="highlight-secure">"arbitrary"</span>
+<span class="comment">└─► Treated as literal string data. No user with literal name "admin' --" exists.</span></code></pre>
+            <p class="expl-text">
+              <strong>Why Mitigation Works:</strong> The query structure is compiled and locked by the database engine prior to binding parameters. The runtime data values can never alter the query's Abstract Syntax Tree (AST). The attack fails deterministically.
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Tab 2: Defense Theory & Mitigations -->
+      <div class="tab-content" id="tab-mitigations">
+        <div class="mitigations-summary">
+          <p class="summary-intro">
+            Per the assignment syllabus (Table 2e), one primary defense is implemented in code (<strong>Parameterized Queries</strong>), while the three complementary defense strategies are detailed below:
+          </p>
+
+          <div class="mitigation-cards-row">
+            <div class="mit-card">
+              <div class="mit-card-header">
+                <span class="mit-number">1</span>
+                <h4>Parameterized Queries (Implemented)</h4>
+              </div>
+              <p>
+                The primary defense against SQL injection. Separates SQL code from untrusted data at the engine level. By preparing the statement first and passing values via placeholders, user data is strictly parsed as column values and can never be interpreted as executable SQL syntax.
+              </p>
+            </div>
+
+            <div class="mit-card">
+              <div class="mit-card-header">
+                <span class="mit-number">2</span>
+                <h4>Input Validation with Allow-Lists (Defense-in-Depth)</h4>
+              </div>
+              <p>
+                Enforces strict syntactic constraints (e.g., regex allow-listing alphanumeric usernames <code>^[a-zA-Z0-9_]{3,20}$</code>). While allow-listing provides strong defense-in-depth and rejects malformed requests early, it <em>does not replace</em> parameterization because business requirements often require special characters (apostrophes in names, punctuation in addresses).
+              </p>
+            </div>
+
+            <div class="mit-card">
+              <div class="mit-card-header">
+                <span class="mit-number">3</span>
+                <h4>Least-Privilege Database Accounts</h4>
+              </div>
+              <p>
+                The web application's database service account should only possess the minimum permissions necessary for its role (e.g., restricted <code>SELECT</code> and <code>UPDATE</code> on specific application tables; no <code>DROP TABLE</code>, <code>GRANT</code>, or administrative procedures like <code>ATTACH DATABASE</code> or <code>xp_cmdshell</code>). This limits exploit blast radius if injection occurs.
+              </p>
+            </div>
+
+            <div class="mit-card">
+              <div class="mit-card-header">
+                <span class="mit-number">4</span>
+                <h4>Safe Error Handling &amp; Logging</h4>
+              </div>
+              <p>
+                Database syntax exceptions, schema details, and engine errors must never be printed to end-user HTTP responses. Internal exceptions should be logged to secure server-side monitoring, while clients receive only generic status responses (e.g., "Invalid credentials" or "Service unavailable"), preventing error-based reconnaissance.
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Tab 3: Demo Accounts -->
+      <div class="tab-content" id="tab-accounts">
+        <div class="accounts-table-container">
+          <p class="accounts-notice">
+            The following fictional test accounts are seeded automatically in the local demonstration database (<code>database.sqlite</code>):
+          </p>
+          <table class="accounts-table">
+            <thead>
+              <tr>
+                <th>ID</th>
+                <th>Username</th>
+                <th>Role</th>
+                <th>Full Name</th>
+                <th>Email</th>
+                <th>Test Password</th>
+                <th>Action</th>
+              </tr>
+            </thead>
+            <tbody id="accounts-table-body">
+              <tr>
+                <td>1</td>
+                <td><code>admin</code></td>
+                <td><span class="role-badge role-admin">Administrator</span></td>
+                <td>System Administrator</td>
+                <td>admin@lab.local</td>
+                <td><code>Admin@SecLab2026!</code></td>
+                <td><button class="btn-table-use" onclick="fillForm('admin', 'Admin@SecLab2026!')">Fill Form</button></td>
+              </tr>
+              <tr>
+                <td>2</td>
+                <td><code>alice</code></td>
+                <td><span class="role-badge role-analyst">Security Analyst</span></td>
+                <td>Alice Sharma</td>
+                <td>alice@lab.local</td>
+                <td><code>Alice#Pass987</code></td>
+                <td><button class="btn-table-use" onclick="fillForm('alice', 'Alice#Pass987!')">Fill Form</button></td>
+              </tr>
+              <tr>
+                <td>3</td>
+                <td><code>bob</code></td>
+                <td><span class="role-badge role-student">Research Student</span></td>
+                <td>Bob Kumar</td>
+                <td>bob@lab.local</td>
+                <td><code>Bob#Secret456</code></td>
+                <td><button class="btn-table-use" onclick="fillForm('bob', 'Bob#Secret456!')">Fill Form</button></td>
+              </tr>
+              <tr>
+                <td>4</td>
+                <td><code>faculty</code></td>
+                <td><span class="role-badge role-faculty">Course Instructor</span></td>
+                <td>Dr. Soumyadev Maity</td>
+                <td>faculty@iiita.ac.in</td>
+                <td><code>Faculty*Auth2026</code></td>
+                <td><button class="btn-table-use" onclick="fillForm('faculty', 'Faculty*Auth2026')">Fill Form</button></td>
+              </tr>
+            </tbody>
+          </table>
+          <p class="storage-disclaimer">
+            <em>Educational Disclaimer:</em> Demonstration passwords in this local lab are maintained in plaintext solely to ensure raw SQL string comparisons are completely transparent during academic inspection. Production deployments must store passwords with salted password-hashing algorithms (e.g., Argon2id or bcrypt).
+          </p>
+        </div>
+      </div>
+    </section>
+
+    <!-- Lab Footer -->
+    <footer class="academic-footer">
+      <div>
+        <strong>Cyber Security (IT-30001)</strong> — Indian Institute of Information Technology Allahabad (IIIT-A)
+      </div>
+      <div>
+        Assignment: Web Server Security (SQL Injection Variant 1: Authentication Bypass)
+      </div>
+    </footer>
+  </div>
+
+  <script src="script.js"></script>
+</body>
+</html>

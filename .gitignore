@@ -1,0 +1,21 @@
+# Dependencies
+node_modules/
+
+# SQLite runtime database
+*.sqlite
+*.sqlite3
+*.db
+
+# Environment & Sensitive configs
+.env
+*.env
+*.key
+*.pem
+
+# Logs
+*.log
+npm-debug.log*
+
+# OS artifacts
+.DS_Store
+Thumbs.db
