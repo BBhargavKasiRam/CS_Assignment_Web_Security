@@ -1,18 +1,4 @@
 # SQL Injection Authentication Bypass Lab (Variant 1)
-## Web Server Security (IT-30001) — Autumn Semester 2026
-### Department of Information Technology — Indian Institute of Information Technology Allahabad (IIIT-A)
-**Instructor:** Dr. Soumyadev Maity  
-**Submission Deadline:** 03 November 2026 (Tuesday), 23:59 IST  
-
----
-
-## Table 3. Ownership Declaration
-
-| Member Name | Roll Number | Category | Variant Implemented | Implemented Mitigation |
-|---|---|---|---|---|
-| *(Student Name)* | *(Roll Number)* | SQL Injection | Variant 1: Authentication Bypass | Parameterized SQL Queries (Prepared Statements) |
-
----
 
 ## 1. Project Overview
 
