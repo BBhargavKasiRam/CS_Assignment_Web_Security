@@ -21,7 +21,7 @@ Exploitation and Mitigation of Web Application Vulnerabilities.
 Each member's project code, demonstration setup, and respective documentation are organized in their corresponding directories:
 
 - **[`IIT2024117/`](./IIT2024117)**: Operating System (OS) Command Injection (v2) implementation and security testing.
-- **[`IIT2024142/`](./IIT2024142)**: Cross-Site Scripting (XSS v1) application (Bidvora platform), backend, frontend, and defenses.
+- **[`IIT2024142/`](./IIT2024142)**: Cross-Site Scripting (XSS v1) application ([Bidvora Live Platform](https://bidvora.vercel.app)), backend, frontend, and defenses.
 - **[`praneeth/`](./praneeth)**: Structured Query Language (SQL) Injection (v1) demonstration and mitigation.
 - **[`iit2024170/`](./iit2024170)**: Cross-Site Request Forgery (CSRF v2) scenarios and defenses.
 - **[`IIT2024190/`](./IIT2024190)**: Operating System (OS) Command Injection (v1) implementation and security testing.

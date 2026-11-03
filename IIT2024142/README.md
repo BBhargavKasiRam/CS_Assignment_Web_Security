@@ -19,7 +19,7 @@
 
 <br/>
 
-[Live Demo](#) · [API Docs](#api-reference) · [Database Schema](#database-schema)
+[🌐 Live Demo: bidvora.vercel.app](https://bidvora.vercel.app) · [API Docs](#api-reference) · [Database Schema](#database-schema)
 
 </div>
 
@@ -45,6 +45,8 @@
 **Bidvora** is a full-stack, production-grade auction platform that enables live, competitive bidding on rare and luxury items. It replicates the core systems of high-end auction houses — real-time price discovery, automated bidding agents, fraud oversight via mediators, integrated payments, and seller performance analytics.
 
 > **Built to demonstrate:** Full-stack architecture, real-time WebSocket systems, REST API design, JWT authentication, role-based access control, cloud integrations, and data-driven dashboards.
+>
+> 🚀 **Live Hosted Application:** [https://bidvora.vercel.app](https://bidvora.vercel.app)
 
 ---
 
