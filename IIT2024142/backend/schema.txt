@@ -1,0 +1,168 @@
+-- =============================================
+-- BIDVORA COMPLETE DATABASE SCHEMA
+-- =============================================
+
+CREATE DATABASE IF NOT EXISTS bidvora;
+USE bidvora;
+
+-- 1. USERS
+CREATE TABLE IF NOT EXISTS users (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  name VARCHAR(150) NOT NULL,
+  email VARCHAR(255) UNIQUE NOT NULL,
+  password VARCHAR(255) NOT NULL,
+  role ENUM('buyer', 'seller', 'mediator', 'auctioneer', 'consignor') NOT NULL,
+  profile_image VARCHAR(500) DEFAULT NULL,
+  rating DECIMAL(3,2) DEFAULT 0.00,
+  items_sold INT DEFAULT 0,
+  is_google_user BOOLEAN DEFAULT 0,
+  otp_code VARCHAR(255) DEFAULT NULL,
+  otp_expires DATETIME DEFAULT NULL,
+  otp_purpose ENUM('register', 'reset') DEFAULT NULL,
+  password_reset_token VARCHAR(255) DEFAULT NULL,
+  password_reset_expires DATETIME DEFAULT NULL,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- 2. AUCTIONS
+CREATE TABLE IF NOT EXISTS auctions (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  seller_id INT NOT NULL,
+  title VARCHAR(255) NOT NULL,
+  description TEXT,
+  starting_price DECIMAL(12,2) NOT NULL,
+  current_price DECIMAL(12,2) NOT NULL,
+  end_time DATETIME NOT NULL,
+  image VARCHAR(500) DEFAULT NULL,
+  mediator_id INT DEFAULT NULL,
+  mediator_status VARCHAR(50) DEFAULT NULL,
+  mediator_commission DECIMAL(10,2) DEFAULT 0.00,
+  status VARCHAR(50) DEFAULT 'active',
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (seller_id) REFERENCES users(id) ON DELETE CASCADE,
+  FOREIGN KEY (mediator_id) REFERENCES users(id) ON DELETE SET NULL
+);
+
+-- 3. BIDS
+CREATE TABLE IF NOT EXISTS bids (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  auction_id INT NOT NULL,
+  user_id INT NOT NULL,
+  amount DECIMAL(12,2) NOT NULL,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (auction_id) REFERENCES auctions(id) ON DELETE CASCADE,
+  FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+);
+
+-- 4. TRANSACTIONS
+CREATE TABLE IF NOT EXISTS transactions (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  auction_id INT NOT NULL,
+  winner_id INT NOT NULL,
+  final_price DECIMAL(12,2) NOT NULL,
+  payment_id VARCHAR(255) DEFAULT NULL,
+  shipping_status ENUM('Pending', 'Shipped', 'In Transit', 'Local Hub', 'Delivered') DEFAULT 'Pending',
+  tracking_number VARCHAR(100) DEFAULT NULL,
+  courier_name VARCHAR(100) DEFAULT 'Global Fine Art Logistics (GFAL)',
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (auction_id) REFERENCES auctions(id) ON DELETE CASCADE,
+  FOREIGN KEY (winner_id) REFERENCES users(id) ON DELETE CASCADE
+);
+
+-- 5. ORDERS
+CREATE TABLE IF NOT EXISTS orders (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  auction_id INT NOT NULL,
+  buyer_id INT NOT NULL,
+  seller_id INT NOT NULL,
+  price DECIMAL(12,2) NOT NULL,
+  payment_status VARCHAR(50) DEFAULT 'Pending',
+  won_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (auction_id) REFERENCES auctions(id) ON DELETE CASCADE,
+  FOREIGN KEY (buyer_id) REFERENCES users(id) ON DELETE CASCADE,
+  FOREIGN KEY (seller_id) REFERENCES users(id) ON DELETE CASCADE
+);
+
+-- 6. PROXY BIDS
+CREATE TABLE IF NOT EXISTS proxy_bids (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  auction_id INT NOT NULL,
+  user_id INT NOT NULL,
+  max_bid_amount DECIMAL(12,2) NOT NULL,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (auction_id) REFERENCES auctions(id) ON DELETE CASCADE,
+  FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+);
+
+-- 7. REVIEWS
+CREATE TABLE IF NOT EXISTS reviews (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  auction_id INT NOT NULL,
+  reviewer_id INT NOT NULL,
+  reviewee_id INT NOT NULL,
+  rating INT NOT NULL CHECK(rating >= 1 AND rating <= 5),
+  comment TEXT,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (auction_id) REFERENCES auctions(id) ON DELETE CASCADE,
+  FOREIGN KEY (reviewer_id) REFERENCES users(id) ON DELETE CASCADE,
+  FOREIGN KEY (reviewee_id) REFERENCES users(id) ON DELETE CASCADE
+);
+
+-- 8. CHAT MESSAGES
+CREATE TABLE IF NOT EXISTS chat_messages (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  auction_id INT NOT NULL,
+  user_id INT DEFAULT NULL,
+  message TEXT NOT NULL,
+  is_system_message BOOLEAN DEFAULT FALSE,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (auction_id) REFERENCES auctions(id) ON DELETE CASCADE,
+  FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE SET NULL
+);
+
+-- 9. MEDIATOR ACTIONS
+CREATE TABLE IF NOT EXISTS mediator_actions (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  auction_id INT NOT NULL,
+  mediator_id INT NOT NULL,
+  action_type VARCHAR(100) NOT NULL,
+  target_user_id INT DEFAULT NULL,
+  note TEXT,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (auction_id) REFERENCES auctions(id) ON DELETE CASCADE,
+  FOREIGN KEY (mediator_id) REFERENCES users(id) ON DELETE CASCADE,
+  FOREIGN KEY (target_user_id) REFERENCES users(id) ON DELETE SET NULL
+);
+
+-- 10. MUTED USERS
+CREATE TABLE IF NOT EXISTS muted_users (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  auction_id INT NOT NULL,
+  user_id INT NOT NULL,
+  muted_by INT NOT NULL,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (auction_id) REFERENCES auctions(id) ON DELETE CASCADE,
+  FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+  FOREIGN KEY (muted_by) REFERENCES users(id) ON DELETE CASCADE
+);
+
+-- 11. MEDIATOR MESSAGES
+CREATE TABLE IF NOT EXISTS mediator_messages (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  auction_id INT NOT NULL,
+  sender_id INT NOT NULL,
+  message TEXT NOT NULL,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (auction_id) REFERENCES auctions(id) ON DELETE CASCADE,
+  FOREIGN KEY (sender_id) REFERENCES users(id) ON DELETE CASCADE
+);
+
+-- 12. WATCHLIST
+CREATE TABLE IF NOT EXISTS watchlist (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  user_id INT NOT NULL,
+  auction_id INT NOT NULL,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+  FOREIGN KEY (auction_id) REFERENCES auctions(id) ON DELETE CASCADE
+);
