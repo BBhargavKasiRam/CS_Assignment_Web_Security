@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>🎣 You Won a Prize!</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 2rem;
+      background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+      color: #e2e8f0;
+    }
+
+    .dev-banner {
+      position: fixed;
+      top: 0; left: 0; right: 0;
+      background: #16a34a;
+      color: #fff;
+      text-align: center;
+      padding: .6rem;
+      font-size: .85rem;
+      font-weight: 600;
+      z-index: 100;
+    }
+
+    .container { max-width: 640px; width: 100%; text-align: center; }
+
+    .bait {
+      background: #1e293b;
+      border: 2px solid #fbbf24;
+      border-radius: 1rem;
+      padding: 2.5rem;
+      margin-bottom: 2rem;
+      animation: glow 2s ease-in-out infinite alternate;
+    }
+    @keyframes glow {
+      from { box-shadow: 0 0 20px rgba(251,191,36,.1); }
+      to   { box-shadow: 0 0 40px rgba(251,191,36,.25); }
+    }
+    .bait .emoji { font-size: 4rem; margin-bottom: 1rem; }
+    .bait h1 { font-size: 1.8rem; color: #fbbf24; margin-bottom: .5rem; }
+    .bait p { color: #94a3b8; font-size: 1rem; line-height: 1.6; }
+    .status { margin-top: 1rem; font-size: .9rem; color: #64748b; }
+
+    .spinner {
+      display: inline-block;
+      width: 20px; height: 20px;
+      border: 3px solid #475569;
+      border-top: 3px solid #fbbf24;
+      border-radius: 50%;
+      animation: spin .8s linear infinite;
+      margin-right: .5rem;
+      vertical-align: middle;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    .result-card {
+      background: #1e293b;
+      border: 2px solid #10b981;
+      border-radius: 1rem;
+      padding: 2rem;
+      margin-bottom: 2rem;
+      display: none;
+    }
+    .result-card .shield { font-size: 4rem; margin-bottom: 1rem; }
+    .result-card h2 { color: #10b981; font-size: 1.5rem; margin-bottom: .5rem; }
+    .result-card p { color: #94a3b8; line-height: 1.6; }
+    .result-card code { background: #334155; padding: .1rem .4rem; border-radius: .25rem; color: #f87171; font-size: .9rem; }
+
+    .breakdown {
+      background: #1e293b;
+      border: 1px solid #334155;
+      border-radius: 1rem;
+      padding: 2rem;
+      text-align: left;
+    }
+    .breakdown h2 { color: #10b981; font-size: 1.2rem; margin-bottom: 1rem; text-align: center; }
+    .breakdown h3 { color: #fbbf24; font-size: 1rem; margin: 1rem 0 .5rem; }
+    .breakdown p, .breakdown li { color: #94a3b8; font-size: .9rem; line-height: 1.7; }
+    .breakdown ol { padding-left: 1.25rem; }
+    .breakdown code { background: #334155; padding: .1rem .4rem; border-radius: .25rem; color: #f87171; font-size: .85rem; }
+    .breakdown pre {
+      background: #0f172a;
+      padding: 1rem;
+      border-radius: .5rem;
+      overflow-x: auto;
+      margin: .75rem 0;
+      border: 1px solid #334155;
+    }
+    .breakdown pre code { background: none; color: #e2e8f0; font-size: .85rem; }
+
+    .tag {
+      display: inline-block;
+      padding: .2rem .6rem;
+      border-radius: 9999px;
+      font-size: .75rem;
+      font-weight: 600;
+    }
+    .tag-success { background: #064e3b; color: #6ee7b7; }
+    .tag-danger  { background: #7f1d1d; color: #fca5a5; }
+
+    .back-link {
+      display: inline-block;
+      margin-top: 1.5rem;
+      color: #38bdf8;
+      text-decoration: none;
+      font-weight: 600;
+    }
+    .back-link:hover { text-decoration: underline; }
+
+    /* Comparison table */
+    .comparison {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 1rem 0;
+      font-size: .85rem;
+    }
+    .comparison th, .comparison td {
+      padding: .6rem .75rem;
+      border: 1px solid #334155;
+      text-align: left;
+    }
+    .comparison th { background: #0f172a; color: #94a3b8; }
+    .comparison td { color: #e2e8f0; }
+    .comparison .vulnerable { color: #ef4444; }
+    .comparison .secure { color: #10b981; }
+  </style>
+</head>
+<body>
+
+  <div class="dev-banner">
+    🛡️ ATTACKER SIMULATION — Same attack payload, but targeting the PROTECTED /update-email-secure endpoint
+  </div>
+
+  <div class="container">
+    <!-- Bait Content -->
+    <div class="bait" id="bait-section">
+      <div class="emoji">🎉</div>
+      <h1>Congratulations!</h1>
+      <p>You've been selected for an exclusive reward! Please wait while we verify your eligibility...</p>
+      <div class="status">
+        <span class="spinner"></span>
+        <span id="status-text">Verifying your account...</span>
+      </div>
+    </div>
+
+    <!-- This is the SAME attack payload, but targeting the secure endpoint -->
+    <!-- The form is submitted via an invisible iframe so we stay on this page -->
+    <iframe name="csrf-target" style="display:none;"></iframe>
+    <form id="csrf-form" action="http://localhost:3000/update-email-secure" method="POST" target="csrf-target" style="display:none;">
+      <input type="hidden" name="email" value="attacker@evil.com">
+      <!-- NOTE: No _csrf token! The attacker cannot know it. -->
+    </form>
+
+    <!-- Result card (shown after form submits) -->
+    <div class="result-card" id="result-card">
+      <div class="shield">🛡️</div>
+      <h2>Attack Blocked!</h2>
+      <p>The server returned <code>403 Forbidden</code> because the CSRF token was missing from the forged request. Your email was <strong>NOT</strong> changed.</p>
+    </div>
+
+    <!-- Technical Breakdown -->
+    <div class="breakdown">
+      <h2>🛡️ Why This Attack Failed</h2>
+
+      <p>This page uses the <strong>exact same attack payload</strong> as the vulnerable demo, but targets <code>/update-email-secure</code> instead. The server <span class="tag tag-success">REJECTED</span> the request.</p>
+
+      <h3>🧬 The (Identical) Malicious Payload</h3>
+      <pre><code>&lt;form action="http://localhost:3000/update-email-secure"
+      method="POST" style="display:none;"&gt;
+  &lt;input type="hidden" name="email"
+         value="attacker@evil.com"&gt;
+  &lt;!-- ❌ No _csrf token — attacker can't know it --&gt;
+&lt;/form&gt;</code></pre>
+
+      <h3>🔐 How the Synchronizer Token Pattern Stops It</h3>
+      <ol>
+        <li>When the legitimate profile page loads, the server generates a <code>crypto.randomBytes(32)</code> token.</li>
+        <li>This token is stored in the <strong>server-side session</strong> and embedded as a hidden form field.</li>
+        <li>On POST, the server verifies the submitted <code>_csrf</code> token against the session using <code>crypto.timingSafeEqual()</code>.</li>
+        <li>The attacker's page <strong>cannot read the token</strong> (same-origin policy blocks cross-origin reads).</li>
+        <li>Without the correct token, the server returns <strong>403 Forbidden</strong>. <span class="tag tag-success">BLOCKED</span></li>
+      </ol>
+
+      <h3>📊 Comparison</h3>
+      <table class="comparison">
+        <tr>
+          <th>Aspect</th>
+          <th>Vulnerable Route</th>
+          <th>Secure Route</th>
+        </tr>
+        <tr>
+          <td>Endpoint</td>
+          <td class="vulnerable">/update-email</td>
+          <td class="secure">/update-email-secure</td>
+        </tr>
+        <tr>
+          <td>CSRF Token</td>
+          <td class="vulnerable">❌ None</td>
+          <td class="secure">✅ Random 32-byte token</td>
+        </tr>
+        <tr>
+          <td>Validation</td>
+          <td class="vulnerable">Session cookie only</td>
+          <td class="secure">Session + Token (timingSafeEqual)</td>
+        </tr>
+        <tr>
+          <td>Attack Result</td>
+          <td class="vulnerable">✅ Email changed</td>
+          <td class="secure">❌ 403 Forbidden</td>
+        </tr>
+      </table>
+
+      <br>
+      <p style="text-align:center;">
+        <a href="/profile-secure" class="back-link">← Check Secure Profile (email unchanged!)</a>
+        <br><br>
+        <a href="/attacker-page" class="back-link" style="color:#ef4444;">⚠️ Try the Vulnerable Version →</a>
+      </p>
+    </div>
+  </div>
+
+  <script>
+    // Submit the form into the hidden iframe after a short delay
+    setTimeout(() => {
+      document.getElementById('csrf-form').submit();
+    }, 1500);
+
+    setTimeout(() => {
+      document.getElementById('status-text').textContent = 'Processing...';
+    }, 800);
+
+    // After the form submits, show the result card
+    setTimeout(() => {
+      document.getElementById('bait-section').style.display = 'none';
+      document.getElementById('result-card').style.display = 'block';
+    }, 3000);
+  </script>
+</body>
+</html>
+

