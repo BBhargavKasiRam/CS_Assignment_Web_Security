@@ -1,0 +1,188 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Blind Command Injection Lab</title>
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🛡️</text></svg>">
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+
+<div class="container">
+    <header>
+        <h1>Blind Command Injection</h1>
+        <p>Variant 2 — Time-Based OS Command Injection</p>
+    </header>
+
+    <section class="card">
+        <h2>Network Diagnostic Tool</h2>
+        <p>Test how unsafe command execution differs from secure validation.</p>
+
+        <div class="mode-buttons">
+            <button id="vulnerableBtn" class="selected" onclick="setMode('vulnerable')">
+                Vulnerable Mode
+            </button>
+            <button id="secureBtn" onclick="setMode('secure')">
+                Secure Mode
+            </button>
+        </div>
+
+        <label for="target">Target IP / Diagnostic Input</label>
+        <input id="target" type="text" value="127.0.0.1"
+               placeholder="Enter diagnostic input">
+
+        <div class="examples">
+            <button type="button" onclick="normalInput()">Normal Input</button>
+            <button type="button" onclick="attackInput('windows')">Attack Payload (Windows)</button>
+            <button type="button" onclick="attackInput('linux')">Attack Payload (Linux / Unix)</button>
+        </div>
+
+        <button id="runBtn" class="run" onclick="runDiagnostic()">
+            Execute Diagnostic
+        </button>
+    </section>
+
+    <section class="card">
+        <h2>Execution Results</h2>
+
+        <div class="results">
+            <div>
+                <small>Execution Mode</small>
+                <h3 id="resultMode">—</h3>
+            </div>
+            <div>
+                <small>Execution Time</small>
+                <h3 id="resultTime">—</h3>
+            </div>
+            <div>
+                <small>Request Status</small>
+                <h3 id="resultStatus" class="status-neutral">Not started</h3>
+            </div>
+        </div>
+
+        <div id="message" class="message">
+            Choose an input and execute the diagnostic.
+        </div>
+    </section>
+
+    <section class="card explanation">
+        <h2>About This Experiment</h2>
+        <p>
+            <strong>Blind OS Command Injection</strong> occurs when an application executes
+            an operating system command using untrusted user input without directly returning
+            the command output to the client.
+        </p>
+        <p>
+            In <strong>Time-Based Blind Injection</strong>, the attacker injects a command
+            that introduces an intentional execution delay (e.g., 5 seconds). An observed
+            delay in server response confirms that the injected command was executed by the shell.
+        </p>
+        <p>
+            <strong>Secure Mode</strong> implements strict allow-list input validation
+            and avoids the shell using parameter-vector execution (<code>shell=False</code>),
+            blocking any command injection attempt.
+        </p>
+    </section>
+</div>
+
+<script>
+    let mode = "vulnerable";
+
+    const payloadWindows =
+        '127.0.0.1 & powershell -NoProfile -Command "Start-Sleep -Seconds 5"';
+    const payloadLinux =
+        '127.0.0.1; sleep 5';
+
+    function setMode(newMode) {
+        mode = newMode;
+
+        document.getElementById("vulnerableBtn")
+            .classList.toggle("selected", mode === "vulnerable");
+
+        document.getElementById("secureBtn")
+            .classList.toggle("selected", mode === "secure");
+
+        document.getElementById("resultMode").textContent = "—";
+        document.getElementById("resultTime").textContent = "—";
+        const statusEl = document.getElementById("resultStatus");
+        statusEl.textContent = "Not started";
+        statusEl.className = "status-neutral";
+        document.getElementById("message").textContent =
+            "Mode changed to " + (mode === "vulnerable" ? "Vulnerable" : "Secure") + ". Run the diagnostic to see its result.";
+    }
+
+    function normalInput() {
+        document.getElementById("target").value = "127.0.0.1";
+    }
+
+    function attackInput(os) {
+        if (os === 'linux') {
+            document.getElementById("target").value = payloadLinux;
+        } else if (os === 'windows') {
+            document.getElementById("target").value = payloadWindows;
+        } else {
+            const isWin = navigator.platform.indexOf('Win') > -1 || navigator.userAgent.indexOf('Windows') > -1;
+            document.getElementById("target").value = isWin ? payloadWindows : payloadLinux;
+        }
+    }
+
+    async function runDiagnostic() {
+        const target = document.getElementById("target").value;
+        const runBtn = document.getElementById("runBtn");
+        const message = document.getElementById("message");
+        const statusEl = document.getElementById("resultStatus");
+
+        runBtn.disabled = true;
+        runBtn.textContent = "Running...";
+        message.textContent = "Executing request... (if payload delays execution, please wait)";
+        statusEl.className = "status-pending";
+        statusEl.textContent = "Executing...";
+
+        const start = performance.now();
+
+        try {
+            const response = await fetch("/api/" + mode, {
+                method: "POST",
+                headers: {"Content-Type": "application/json"},
+                body: JSON.stringify({target: target})
+            });
+
+            const data = await response.json();
+            const elapsed = (performance.now() - start) / 1000;
+
+            document.getElementById("resultMode").textContent =
+                data.mode || mode;
+
+            document.getElementById("resultTime").textContent =
+                elapsed.toFixed(2) + " seconds";
+
+            statusEl.textContent = data.status || "Error";
+
+            if (!response.ok) {
+                statusEl.className = "status-blocked";
+                message.textContent = data.error || "Request failed / blocked";
+            } else {
+                statusEl.className = "status-success";
+                if (elapsed >= 4.0) {
+                    message.textContent =
+                        "Time delay observed (" + elapsed.toFixed(2) + "s). Blind command injection succeeded!";
+                } else {
+                    message.textContent =
+                        "Diagnostic completed quickly (" + elapsed.toFixed(2) + "s). Normal response received.";
+                }
+            }
+        } catch (error) {
+            statusEl.className = "status-blocked";
+            statusEl.textContent = "Error";
+            message.textContent = error.message;
+        } finally {
+            runBtn.disabled = false;
+            runBtn.textContent = "Execute Diagnostic";
+        }
+    }
+</script>
+
+</body>
+</html>
