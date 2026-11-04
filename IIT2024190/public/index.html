@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Network Diagnostic Utility</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <main class="card">
+    <h1>Network Diagnostic Utility</h1>
+    <p class="sub">Enter a hostname or IP address to ping it.</p>
+
+    <div class="row">
+      <input id="host" type="text" placeholder="e.g. 127.0.0.1" value="127.0.0.1" autocomplete="off">
+      <button id="runBtn">Run Ping</button>
+    </div>
+
+    <h2>Command executed</h2>
+    <pre id="cmd" class="box">-</pre>
+
+    <h2>Output from server</h2>
+    <pre id="output" class="box">Waiting for input...</pre>
+  </main>
+  <script src="script.js"></script>
+</body>
+</html>

@@ -1,0 +1,14 @@
+{
+  "name": "web-server-security",
+  "version": "1.0.0",
+  "description": "OS Command Injection (Variant 1: In-band) - exploit and mitigation demo",
+  "main": "server.vulnerable.js",
+  "scripts": {
+    "start:vulnerable": "node server.vulnerable.js",
+    "start:secure": "node server.secure.js"
+  },
+  "license": "MIT",
+  "dependencies": {
+    "express": "^4.19.2"
+  }
+}
